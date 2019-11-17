@@ -6,6 +6,9 @@ Tri-Robot Cooperation
 ## Project goal:
 This project will help Kobukis cooperate to solve some tasks.   
 
+## Achitecture 
+![avatar][/home/
+
 ## Team members:  
 Jieming Fan  
 Zhaoyang Chen  
