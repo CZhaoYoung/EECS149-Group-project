@@ -301,6 +301,8 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt) {
 //    }
 //}
 
+bool flag = 0;
+
 static void on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context) {
     uint32_t err_code;
 
@@ -322,7 +324,7 @@ static void on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context) {
             APP_ERROR_CHECK(err_code);
 
             printf("I'm connected!\n");
-
+            flag = 1;
             // Callback for user. Weak reference, so check validity first
             if (ble_evt_connected) {
                 ble_evt_connected(p_ble_evt);
@@ -348,7 +350,7 @@ static void on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context) {
             advertising_start();
 
             printf("I'm disconnected\n");
-
+            flag = 0;
             // Callback for user. Weak reference, so check validity first
             if (ble_evt_disconnected) {
                 ble_evt_disconnected(p_ble_evt);
@@ -1299,7 +1301,8 @@ void simple_ble_set_adv(ble_advdata_t* adv_data, ble_advdata_t* scan_rsp_data) {
     APP_ERROR_CHECK(err_code);
 
     // Start the advertisement
-    advertising_start();
+    if (flag) advertising_start_connection();
+    else advertising_start();
 }
 
 

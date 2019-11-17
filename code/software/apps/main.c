@@ -1,6 +1,6 @@
-// Robot Template app
+// BLE RX app
 //
-// Framework for creating applications that control the Kobuki robot
+// Receives BLE advertisements with data
 
 #include <math.h>
 #include <stdbool.h>
@@ -9,9 +9,10 @@
 
 #include "app_error.h"
 #include "app_timer.h"
-#include "nrf.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
+#include "nrf.h"
+#include "app_util.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
@@ -29,128 +30,92 @@
 
 #include "states.h"
 
-// I2C manager
 NRF_TWI_MNGR_DEF(twi_mngr_instance, 5, 0);
-
-// global variables
 KobukiSensors_t sensors = {0};
 
-// Intervals for advertising and connections
+// BLE configuration
+// This is mostly irrelevant since we are scanning only
 static simple_ble_config_t ble_config = {
-        // c0:98:e5:49:xx:xx
-        .platform_id       = 0x49,    // used as 4th octect in device BLE address
-        .device_id         = 0x2043, // TODO: replace with your lab bench number
-        .adv_name          = "FFJMMM", // used in advertisements if there is room
-        .adv_interval      = MSEC_TO_UNITS(1000, UNIT_0_625_MS),
-        .min_conn_interval = MSEC_TO_UNITS(100, UNIT_1_25_MS),
-        .max_conn_interval = MSEC_TO_UNITS(200, UNIT_1_25_MS),
+        // BLE address is c0:98:e5:49:00:00
+        .platform_id       = 0x49,    // used as 4th octet in device BLE address
+        .device_id         = 0x2048,  // Last two octets of device address
+        .adv_name          = "EE149", // irrelevant in this example
+        .adv_interval      = MSEC_TO_UNITS(1000, UNIT_0_625_MS), // send a packet once per second (minimum is 20 ms)
+        .min_conn_interval = MSEC_TO_UNITS(500, UNIT_1_25_MS), // irrelevant if advertising only
+        .max_conn_interval = MSEC_TO_UNITS(1000, UNIT_1_25_MS), // irrelevant if advertising only
 };
+simple_ble_app_t* simple_ble_app;
 
-//4607eda0-f65e-4d59-a9ff-84420d87a4ca
-static simple_ble_service_t robot_service = {{
-    .uuid128 = {0xca,0xa4,0x87,0x0d,0x42,0x84,0xff,0xA9,
-                0x59,0x4D,0x5e,0xf6,0xa0,0xed,0x07,0x46}
-}};
-
-// TODO: Declare characteristics and variables for your service
-static simple_ble_char_t robot_state_char = {.uuid16 = 0xeda1};
-static int robot_state;
 bool drive = false;
 bool back = false;
 bool left = false;
 bool right = false;
 
-simple_ble_app_t* simple_ble_app;
+void ble_evt_adv_report(ble_evt_t const* p_ble_evt) {
 
-void ble_evt_write(ble_evt_t const* p_ble_evt) {
-    // TODO: logic for each characteristic and related state changes
+  ble_gap_evt_adv_report_t const* adv_report = &(p_ble_evt->evt.gap_evt.params.adv_report);
+  // TODO: extract the fields we care about (Peer address and data)
+  ble_gap_addr_t peer = adv_report -> peer_addr;
+  ble_data_t data = adv_report -> data;
 
-	printf("%d\n", robot_state);
+  // TODO: filter on Peer address
+  if (peer.addr[5] == 0xC0 && peer.addr[4] == 0x98 && peer.addr[3] == 0xE5 &&
+      peer.addr[2] == 0x49 && peer.addr[1] == 0x20 && peer.addr[0] == 0x43) {
+    
+    // for (int i = 0; i < data.len; i ++) {
+    //   printf("%d ", data.p_data[i]);
+    // }
+    // printf("\n");
 
-    if (robot_state == 8) {
-    	drive = true;
-    	back = false;
-    	left = false;
-    	right = false;
-    }
-    if (robot_state == 4) {
-    	drive = false;
-    	back = true;
-    	left = false;
-    	right = false;
-    }
-    if (robot_state == 1) {
-    	drive = false;
-    	back = false;
-    	left = true;
-    	right = false;
-    }
-    if (robot_state == 2) {
-    	drive = false;
-    	back = false;
-    	left = false;
-    	right = true;
-    }
-    if (robot_state == 0) {
-    	drive = false;
-    	back = false;
-    	left = false;
-    	right = false;
-    }
+    //while (1) {
+
+      // TODO: get length of field
+      // TODO: get type of field: if type is 0xFF, we found it!
+      // Print the data as a string. i.e. printf("%s\n", data + offset)
+      // Otherwise, skip ahead by the length of the current field
+    //}
+  }
 }
 
 void print_state(states current_state){
-	switch(current_state){
-	case OFF: {
-		display_write("OFF", DISPLAY_LINE_0);
-		break;
+  switch(current_state){
+  case OFF: {
+    display_write("OFF", DISPLAY_LINE_0);
+    break;
     }
     case DRIVE: {
-		display_write("DRIVE", DISPLAY_LINE_0);
-		break;
+    display_write("DRIVE", DISPLAY_LINE_0);
+    break;
     }
     case BACK: {
-		display_write("BACK", DISPLAY_LINE_0);
-		break;
+    display_write("BACK", DISPLAY_LINE_0);
+    break;
     }
     case LEFT: {
-		display_write("LEFT", DISPLAY_LINE_0);
-		break;
+    display_write("LEFT", DISPLAY_LINE_0);
+    break;
     }
     case RIGHT: {
-		display_write("RIGHT", DISPLAY_LINE_0);
-		break;
+    display_write("RIGHT", DISPLAY_LINE_0);
+    break;
     }
     case WAIT: {
-		display_write("WAIT", DISPLAY_LINE_0);
-		break;
+    display_write("WAIT", DISPLAY_LINE_0);
+    break;
     }
-	}
+  }
 }
 
 int main(void) {
   ret_code_t error_code = NRF_SUCCESS;
 
+  // Initialize
+
   // initialize RTT library
   error_code = NRF_LOG_INIT(NULL);
   APP_ERROR_CHECK(error_code);
   NRF_LOG_DEFAULT_BACKENDS_INIT();
-  printf("Log initialized!\n");
-
-  // Setup BLE
-  simple_ble_app = simple_ble_init(&ble_config);
-
-  simple_ble_add_service(&robot_service);
-
-  // TODO: Register your characteristics
-  simple_ble_add_characteristic(1, 1, 0, 0, 
-  	sizeof(robot_state), (uint8_t*)&robot_state,
-  	&robot_service, &robot_state_char);
-
-  // Start Advertising
-  //simple_ble_adv_only_name();
-  int x = 0;
-  simple_ble_adv_manuf_data((uint8_t*)x, sizeof(x));
+  printf("Log initialized\n");
 
   // initialize LEDs
   nrf_gpio_pin_dir_set(23, NRF_GPIO_PIN_DIR_OUTPUT);
@@ -189,25 +154,26 @@ int main(void) {
   kobukiInit();
   printf("Kobuki initialized!\n");
 
-  states state = OFF;
-  // loop forever, running state machine
-  while (1) {
-    // if (x < 100000)
-    //   x += 1;
-    // simple_ble_adv_manuf_data((uint8_t*)x, sizeof(x));
-    // read sensors from robot
-    //int status = kobukiSensorPoll(&sensors);
-  	kobukiSensorPoll(&sensors);
-    simple_ble_adv_manuf_data((uint8_t*)x, sizeof(x));
-  	
-    // TODO: complete state machine
+  // Setup BLE
+  // Note: simple BLE is our own library. You can find it in `nrf5x-base/lib/simple_ble/`
+  simple_ble_app = simple_ble_init(&ble_config);
+  advertising_stop();
+
+  // TODO: Start scanning
+  scanning_start();
+
+  states state = OFF;  
+
+  while(1) {
+    // Sleep while SoftDevice handles BLE
+    kobukiSensorPoll(&sensors);
+
     switch(state) {
       case OFF: {
         print_state(state);
-        x = 10;
         // transition logic
         if (is_button_pressed(&sensors)) {
-          	state = WAIT;
+            state = WAIT;
         } else {
           state = OFF;
           // perform state-specific actions here
@@ -217,112 +183,110 @@ int main(void) {
       }
       case WAIT: {
         print_state(state);
-        x = 0;
-        
         // transition logic
         if (is_button_pressed(&sensors)) {
           state = OFF;
           kobukiDriveDirect(0, 0);
         } else {
           if (drive && !back && !right && !left) {
-          	state = DRIVE;
-          	kobukiDriveDirect(100, 100);
+            state = DRIVE;
+            kobukiDriveDirect(100, 100);
           }
           else if (!drive && back && !right && !left) {
-          	state = BACK;
-          	kobukiDriveDirect(-100, -100);
+            state = BACK;
+            kobukiDriveDirect(-100, -100);
           }
           else if (!drive && !back && right && !left) {
-          	state = RIGHT;
-          	kobukiDriveDirect(100, -100);
+            state = RIGHT;
+            kobukiDriveDirect(100, -100);
           }
           else if (!drive && !back && !right && left) {
-          	state = LEFT;
-          	kobukiDriveDirect(-100, 100);
+            state = LEFT;
+            kobukiDriveDirect(-100, 100);
           }
           else {
-          	state = WAIT;
-          	kobukiDriveDirect(0, 0);
+            state = WAIT;
+            kobukiDriveDirect(0, 0);
           }
         }
         break; // each case needs to end with break!
       }
       case DRIVE: {
         print_state(state);
-        x = 8;
         // transition logic
         if (is_button_pressed(&sensors)) {
           state = OFF;
           kobukiDriveDirect(0, 0);
         } else {
           if (drive && !back && !right && !left) {
-          	state = DRIVE;
-          	kobukiDriveDirect(100, 100);
+            state = DRIVE;
+            kobukiDriveDirect(100, 100);
           }
           else {
-          	state = WAIT;
-          	kobukiDriveDirect(0, 0);
+            state = WAIT;
+            kobukiDriveDirect(0, 0);
           }
         }
         break; // each case needs to end with break!
       }
       case BACK: {
         print_state(state);
-        x = 4;
         // transition logic
         if (is_button_pressed(&sensors)) {
           state = OFF;
           kobukiDriveDirect(0, 0);
         } else {
           if (!drive && back && !right && !left) {
-          	state = BACK;
-          	kobukiDriveDirect(-100, -100);
+            state = BACK;
+            kobukiDriveDirect(-100, -100);
           }
           else {
-          	state = WAIT;
-          	kobukiDriveDirect(0, 0);
+            state = WAIT;
+            kobukiDriveDirect(0, 0);
           }
         }
         break; // each case needs to end with break!
       }
       case LEFT: {
         print_state(state);
-        x = 1;
         // transition logic
         if (is_button_pressed(&sensors)) {
           state = OFF;
           kobukiDriveDirect(0, 0);
         } else {
           if (!drive && !back && !right && left) {
-          	state = LEFT;
-          	kobukiDriveDirect(-100, 100);
+            state = LEFT;
+            kobukiDriveDirect(-100, 100);
           }
           else {
-          	state = WAIT;
-          	kobukiDriveDirect(0, 0);
+            state = WAIT;
+            kobukiDriveDirect(0, 0);
           }
         }
         break; // each case needs to end with break!
       }
       case RIGHT: {
         print_state(state);
-        x = 2;
         // transition logic
         if (is_button_pressed(&sensors)) {
           state = OFF;
           kobukiDriveDirect(0, 0);
         } else {
           if (!drive && !back && right && !left) {
-          	state = RIGHT;
-          	kobukiDriveDirect(100, -100);
+            state = RIGHT;
+            kobukiDriveDirect(100, -100);
           }
           else {
-          	state = WAIT;
-          	kobukiDriveDirect(0, 0);
+            state = WAIT;
+            kobukiDriveDirect(0, 0);
           }
         }
         break; // each case needs to end with break!
       }
     }
+
   }
 }
+
+
+
