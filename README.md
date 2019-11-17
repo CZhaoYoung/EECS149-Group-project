@@ -1,7 +1,7 @@
 # EECS149-Group-project
 This repository is for embeded system final project  
 ## Project:
-Cooperative robot platooning
+Tri-Robot Cooperation 
 
 ## Project goal:
 This project will help Kobukis cooperate to solve some tasks.   
