@@ -7,7 +7,7 @@ Tri-Robot Cooperation
 This project will help Kobukis cooperate to solve some tasks.   
 
 ## Achitecture 
-![avatar][./architecture_drawings/diagram]
+![image](https://github.com/CZhaoYoung/EECS149-Group-project/blob/master/architecture_drawings/diagram.png)
 
 ## Team members:  
 Jieming Fan  
