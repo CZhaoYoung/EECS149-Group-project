@@ -20,7 +20,13 @@ We will utilize the UWB device (DWM 1001C) to form the distance measurement syst
 As we have the data from the listener (DWM1001C), we can build a coordinate system by setting the location of the leader kobuki as an origin. The initial orientation of the kobuki can be obtained by pressing the start button to move the kobuki and then to get the vector, which can be regarded as the initial orientation of the kobuki.<br>
 
 ## State Machine 
-![image]()
+![image](https://github.com/CZhaoYoung/EECS149-Group-project/blob/master/architecture_drawings/statemachine.png)
+
+## Identification of major risks <br>
+(1) We need to consider the drifts of each kobukis, which will be a tricky task in the coming weeks. It is challenging  if the kobuki do not follow the route we set. <br>
+(2) The tag (DWM1001C)  that is being tracked on the tablet must be in Bluetooth range of the tablet, if it is not on the range, it may not work well. <br>
+(3) We need to consider the time delay of BLE connections between the devices.<br>
+
 
 ## Team members:  
 Jieming Fan  
