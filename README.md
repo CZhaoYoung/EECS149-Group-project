@@ -10,6 +10,9 @@ This project will use BLE connections and UWB transcievers to help Kobuki's coop
 ## Achitecture 
 ![image](https://github.com/CZhaoYoung/EECS149-Group-project/blob/master/architecture_drawings/diagram.png)
 
+## State Machine 
+![image]()
+
 ## Team members:  
 Jieming Fan  
 Zhaoyang Chen  
