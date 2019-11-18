@@ -1,7 +1,6 @@
 # EECS149-Group-project
 This repository is for embeded system final project  
-## Project:
-Tri-Robot Cooperation 
+## Project:Tri-Robot Cooperation 
 
 ## Project goal:
 We set the Kobuki performing route to be:
