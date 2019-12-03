@@ -7,11 +7,11 @@
 #include "spi.h"
 
 static const nrf_drv_spi_t* spi_instance;
-static ab1815_control_t ctrl_config;
+static UWB_control_t ctrl_config;
 static nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 static ab1815_alarm_callback* interrupt_callback;
 
-void ab1815_init(const nrf_drv_spi_t* instance) {
+void UWB_init(const nrf_drv_spi_t* instance) {
   spi_instance = instance;
 
   spi_config.sck_pin    = SPI_SCLK;
@@ -26,7 +26,7 @@ void ab1815_init(const nrf_drv_spi_t* instance) {
   nrf_gpio_pin_set(RTC_WDI);
 }
 
-void  ab1815_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
+void  UWB_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
   if (len > 256) return;
   uint8_t readreg = reg;
   uint8_t buf[257];
@@ -38,7 +38,7 @@ void  ab1815_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
   memcpy(read_buf, buf+1, len);
 }
 
-void ab1815_write_reg(uint8_t reg, uint8_t* write_buf, size_t len){
+void UWB_write_reg(uint8_t reg, uint8_t* write_buf, size_t len){
   if (len > 256) return;
   uint8_t buf[257];
   buf[0] = 0x80 | reg;
@@ -52,7 +52,7 @@ void ab1815_write_reg(uint8_t reg, uint8_t* write_buf, size_t len){
 static void interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
   // read and clear interrupts
   uint8_t status = 0;
-  ab1815_read_reg(AB1815_STATUS, &status, 1);
+  UWB_read_reg(AB1815_STATUS, &status, 1);
 
   if (status & 0x4 && interrupt_callback) {
     // call user callback
@@ -61,7 +61,7 @@ static void interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t ac
 }
 
 
-void ab1815_set_config(ab1815_control_t config) {
+void UWB_set_config(UWB_control_t config) {
   uint8_t write;
   write =  config.stop << 7 | config.hour_12 << 6 | config.OUTB << 5 |
             config.OUT << 4 | config.rst_pol << 3 | config.auto_rst << 2 |
@@ -74,10 +74,10 @@ void ab1815_set_config(ab1815_control_t config) {
 
   //int error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);
   //APP_ERROR_CHECK(error);
-  ab1815_write_reg(AB1815_CONTROL1, &write, 1);
+  UWB_write_reg(AB1815_CONTROL1, &write, 1);
 }
 
-void ab1815_get_config(ab1815_control_t* config) {
+void UWB_get_config(UWB_control_t* config) {
   uint8_t read;
 
   //nrf_spi_mngr_transfer_t const config_transfer[] = {
@@ -89,7 +89,7 @@ void ab1815_get_config(ab1815_control_t* config) {
 
   //printf("%x\n", read[1]);
 
-  ab1815_read_reg(AB1815_CONTROL1, &read, 1);
+  UWB_read_reg(AB1815_CONTROL1, &read, 1);
 
   config->stop      = (read & 0x80) >> 7;
   config->hour_12   = (read & 0x40) >> 6;
@@ -100,7 +100,7 @@ void ab1815_get_config(ab1815_control_t* config) {
   config->write_rtc = read & 0x01;
 }
 
-void ab1815_interrupt_config(ab1815_int_config_t config) {
+void UWB_interrupt_config(UWB_int_config_t config) {
   return;
 }
 

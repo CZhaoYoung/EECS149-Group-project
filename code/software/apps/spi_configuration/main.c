@@ -35,9 +35,9 @@ int main(void) {
   nrf_gpio_pin_set(MS5637_EN);
   nrf_gpio_pin_set(SI7021_EN);
 
-  ab1815_control_t config;
+  UWB_control_t config;
   struct timeval tv = {.tv_sec = 1534453449};
-  ab1815_time_t  time = unix_to_ab1815(tv);
+  UWB_time_t  time = unix_to_ab1815(tv);
   //{
   //  .minutes = 8,
   //  .hours = 20,
@@ -47,12 +47,12 @@ int main(void) {
   //  .weekday = 3,
   //};
 
-  ab1815_init(&spi_instance);
-  ab1815_get_config(&config);
+  UWB_init(&spi_instance);
+  UWB_get_config(&config);
   config.auto_rst = 1;
 
   config.write_rtc = 1;
-  ab1815_set_config(config);
+  UWB_set_config(config);
 
   ab1815_set_time(time);
 
