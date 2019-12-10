@@ -10,7 +10,7 @@ We decided to use 8 ultra wideband transceivers, including 4 anchors, 3 tags and
 
 
 ## Achitecture 
-![image](https://github.com/CZhaoYoung/EECS149-Group-project/blob/master/architecture_drawings/diagram.png)
+![image](https://github.com/CZhaoYoung/EECS149-Group-project/blob/master/architecture_drawings/Untitled%20Diagram%20(4).png)
 
 (1) BLE communication:<br>
 Actor manipulates computer by pressing the start button or moving button to control the kobuki.  Eventually, the command is sent to the leader of kobukis from the computer by BLE,  and then the leader kobuki will advertise the commands by BLE to other kobukis to realize communication with each other. <br>
