@@ -64,17 +64,39 @@ typedef enum {
   DISABLED        = 0x0,
 } ab1815_alarm_repeat;
 
+// typedef struct {
+//   bool stop;
+//   bool hour_12;
+//   bool OUTB;
+//   bool OUT;
+//   bool rst_pol;
+//   bool auto_rst;
+//   bool write_rtc;
+//   uint8_t psw_nirq2_function;
+//   uint8_t fout_nirq_function;
+// } ab1815_control_t;
+
 typedef struct {
-  bool stop;
-  bool hour_12;
-  bool OUTB;
-  bool OUT;
-  bool rst_pol;
-  bool auto_rst;
-  bool write_rtc;
-  uint8_t psw_nirq2_function;
-  uint8_t fout_nirq_function;
-} ab1815_control_t;
+	bool stnry_en;
+	bool low_power_en;
+	bool loc_engine_en;
+	bool enc_en;
+	bool led_en;
+	bool ble_en;
+	bool fw_updata_en;
+	uint8_t uwb_mode; // ??
+	uint8_t meas_mode;  // ??
+} uwb_control_t;
+
+typedef struct 
+{
+	uint32_t x;
+	uint32_t y;
+	uint32_t z;
+	uint8_t pqf;  // position quality factor in percent
+} uwb_position; // posotion is 13 byte position array 
+
+
 
 typedef struct {
   bool century_en;

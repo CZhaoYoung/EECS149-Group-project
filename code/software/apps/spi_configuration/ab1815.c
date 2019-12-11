@@ -3,6 +3,7 @@
 #include "app_error.h"
 
 #include "ab1815.h"
+#include "dwm_api.h"
 
 static const nrf_drv_spi_t* spi_instance;
 static ab1815_control_t ctrl_config;
@@ -12,10 +13,10 @@ static ab1815_alarm_callback* interrupt_callback;
 void ab1815_init(const nrf_drv_spi_t* instance) {
   spi_instance = instance;
 
-  spi_config.sck_pin    = SPI_SCLK;
-  spi_config.miso_pin   = SPI_MISO;
-  spi_config.mosi_pin   = SPI_MOSI;
-  spi_config.ss_pin     = RTC_CS;
+  spi_config.sck_pin    = SD_CARD_SPI_SCLK;
+  spi_config.miso_pin   = SD_CARD_SPI_MISO;
+  spi_config.mosi_pin   = SD_CARD_SPI_MOSI;
+  spi_config.ss_pin     = SD_CARD_SPI_CS;
   spi_config.frequency  = NRF_DRV_SPI_FREQ_2M;
   spi_config.mode       = NRF_DRV_SPI_MODE_0;
   spi_config.bit_order  = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
@@ -56,6 +57,16 @@ static void interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t ac
     // call user callback
     interrupt_callback();
   }
+}
+
+void uwb_set_config(uwb_control_t config) {
+	uint16_t write;
+	write = config.stnry_en << 10| config.meas_mode << 9 |
+			config.low_power_en << 7 | config.loc_engine_en << 6 |
+			config.enc_en << 5 | config.led_en << 4 | config.ble_en << 3 |
+			config.fw_update_en << 2 | config.uwb_mode;
+	ctrl_config = config; 
+	ab1815_write_reg()
 }
 
 
