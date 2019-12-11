@@ -62,7 +62,7 @@ static void interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t ac
 
 void uwb_set_config(uwb_control_t config) {
   uint16_t write;
-  
+
   write = config.stnry_en << 10| config.meas_mode << 9 |
       config.low_power_en << 7 | config.loc_engine_en << 6 |
       config.enc_en << 5 | config.led_en << 4 | config.ble_en << 3 |
@@ -101,17 +101,13 @@ inline uint8_t get_ones(uint8_t x) {
   return x % 10;
 }
 
-void ab1815_form_time_buffer(ab1815_time_t time, uint8_t* buf) {
-  APP_ERROR_CHECK_BOOL(time.hundredths < 100 && time.hundredths >= 0);
-  APP_ERROR_CHECK_BOOL(time.seconds < 60 && time.seconds>= 0);
-  APP_ERROR_CHECK_BOOL(time.minutes < 60 && time.minutes >= 0);
-  APP_ERROR_CHECK_BOOL(time.hours < 24 && time.hours >= 0);
-  if (time.date == 0) time.date = 1;
-  if (time.months == 0) time.months = 1;
-  APP_ERROR_CHECK_BOOL(time.date <= 31 && time.date >= 1);
-  APP_ERROR_CHECK_BOOL(time.months <= 12 && time.months >= 1);
-  APP_ERROR_CHECK_BOOL(time.years < 100 && time.date >= 0);
-  APP_ERROR_CHECK_BOOL(time.weekday < 7 && time.weekday >= 0);
+void ab1815_form_time_buffer(uwb_position position, uint8_t* buf) {
+
+  // check the x, y, z is valid
+  // we don't need to check 
+
+
+  // To do
 
   buf[0] = (get_tens(time.hundredths) & 0xF) << 4  | (get_ones(time.hundredths) & 0xF);
   buf[1] = (get_tens(time.seconds) & 0x7) << 4    | (get_ones(time.seconds) & 0xF);
