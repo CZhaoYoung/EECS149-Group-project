@@ -27,7 +27,7 @@ API_DIR = $(DRIVER_DIR)/dwm_api
 #  0: Raspberry-Pi
 #  1: else
 
-ifeq ($(TARGET),0)
+ifeq ($(TARGET),1)
 cc = $(ARM_CC)
 HAL_DIR = $(PROJ_DIR)/platform/rpi/hal
 endif 
@@ -62,7 +62,7 @@ SOURCES += $(LMH_DIR)/lmh.c
 #  USE_SPI            1
 #  USE_SPI_DRDY       2
 ifndef INTERFACE_NUMBER
-INTERFACE_NUMBER=0
+INTERFACE_NUMBER=1
 endif
 
 DEFINES += INTERFACE_NUMBER=$(INTERFACE_NUMBER)

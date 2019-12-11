@@ -15,14 +15,14 @@
 #  TARGET
 #  0: Raspberry-Pi
 #  1: else
-TARGET = 0
+TARGET = 1
 
 ####################################################
 #  INTERFACE_NUMBER
 #  0: USE_UART  
 #  1: USE_SPI    
 #  2: USE_SPI_DRDY
-INTERFACE_NUMBER = 0
+INTERFACE_NUMBER = 1
 
 ####################################################
 #  PRINT_LVL 
@@ -37,7 +37,7 @@ PRINT_LVL = 3
 PROGRAM = tag_cfg
 SOURCES = tag_cfg.c
 
-PROJ_DIR += ../../..
+PROJ_DIR += ..
 
 CFLAGS += -Wall
 
