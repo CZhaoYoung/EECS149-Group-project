@@ -6,7 +6,9 @@ Tri-Robot Cooperation
 ## Project goal:
 We set the Kobuki performing route to be:
 Randomly place → Automatically forming a triangle (three Kobuki’s move without following the leader Kobuki )→Followers and the leader Kobuki do other commands of the instructor.
+![image](https://github.com/CZhaoYoung/EECS149-Group-project/blob/master/architecture_drawings/task%20route.png)
 We decided to use 8 ultra wideband transceivers, including 4 anchors, 3 tags and 1 listener to measure position of each Kobuki(i.e. its x,y,z coordinates).
+
 
 
 ## Achitecture 
