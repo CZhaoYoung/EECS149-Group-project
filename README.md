@@ -37,5 +37,4 @@ Jieming Fan
 Zhaoyang Chen  
 Bingjie Zhu  
 Manqin Zhong 
-**Explanation** To Professors and GSIs, there are only four members in our group as listed above. However, you will find five contributors in this github repo. There is a virtual machine in lab computer 204-6 will save the information from previous user, so I mistakely use other's git account to push our project files to this repo. Actually, all of this work is from us four.
-
+**Explanation** To Professors and GSIs, there are only four members in our group, as listed above. However, you will find five contributors to this GitHub repo. There is a virtual machine in lab computer 204-6 will save the information from the previous user, so I mistakenly use other's git account to push our project files to this repo. All of this project work is from us four. From Zhaoyang
