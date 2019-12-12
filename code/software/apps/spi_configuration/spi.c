@@ -85,7 +85,7 @@ void UWB_get_config(uwb_control_t* config) {
   config->led_en = (read & 0x0010) >> 4;
   config->ble_en = (read & 0x0008) >> 3;
   config->fw_update_en = (read & 0x0004) >> 2;
-  config->uwb_mode = read & 0x0002;
+  config->uwb_mode = read & 0x0003;
 
 }
 
@@ -101,36 +101,32 @@ inline uint8_t get_ones(uint8_t x) {
   return x % 10;
 }
 
-void ab1815_form_time_buffer(uwb_position position, uint8_t* buf) {
+void ab1815_form_time_buffer(uwb_position position, uint64_t* buf) {
 
-  // check the x, y, z is valid
+  // check the x, y is valid
   // we don't need to check 
 
 
   // To do
+  buf[] = (position.x & 0xFF) << 
+  buf[] = (position.y & 0xFF) <<
+
 
   buf[0] = (get_tens(time.hundredths) & 0xF) << 4  | (get_ones(time.hundredths) & 0xF);
   buf[1] = (get_tens(time.seconds) & 0x7) << 4    | (get_ones(time.seconds) & 0xF);
-  buf[2] = (get_tens(time.minutes) & 0x7) << 4    | (get_ones(time.minutes) & 0xF);
-  buf[3] = (get_tens(time.hours) & 0x3) << 4      | (get_ones(time.hours) & 0xF);
-  buf[4] = (get_tens(time.date) & 0x3) << 4       | (get_ones(time.date) & 0xF);
-  buf[5] = (get_tens(time.months) & 0x1) << 4     | (get_ones(time.months) & 0xF);
-  buf[6] = (get_tens(time.years) & 0xF) << 4      | (get_ones(time.years) & 0xF);
-  buf[7] = time.weekday & 0x7;
+
 }
 
-void ab1815_set_time(ab1815_time_t time) {
+void ab1815_set_time(uwb_position position) {
   uint8_t write[8];
 
   // Ensure rtc write bit is enabled
-  if (ctrl_config.write_rtc != 1) {
-    ctrl_config.write_rtc = 1;
-    ab1815_set_config(ctrl_config);
-  }
 
-  ab1815_form_time_buffer(time, write);
+  uwb_set_config(ctrl_config);
 
-  ab1815_write_reg(AB1815_HUND, write, 8);
+  ab1815_form_time_buffer(position, write);
+
+  ab1815_write_reg(UWB_X , write, 8);
 
   //nrf_spi_mngr_transfer_t const write_time_transfer[] = {
   //  NRF_SPI_MNGR_TRANSFER(write, 9, NULL, 0),
@@ -140,10 +136,10 @@ void ab1815_set_time(ab1815_time_t time) {
   //APP_ERROR_CHECK(error);
 }
 
-void ab1815_get_time(ab1815_time_t* time) {
+void ab1815_get_time(uwb_position* position) {
   uint8_t read[10];
 
-  ab1815_read_reg(AB1815_HUND, read, 8);
+  ab1815_read_reg(UWB_Y, read, 8);
 
   //nrf_spi_mngr_transfer_t const config_transfer[] = {
   //  NRF_SPI_MNGR_TRANSFER(write, 1, read, 9),

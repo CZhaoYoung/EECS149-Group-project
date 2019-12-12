@@ -6,10 +6,10 @@
 #include "buckler.h"
 
 // Time and date registers
-#define AB1815_HUND               0x00
-#define UWB_X                0x01
-#define UWB_Y                0x02
-#define UWB_Z               0x03
+#define AB1815_HUND           0x00
+#define UWB_X                 0x01
+#define UWB_Y                 0x02
+#define UWB_Z                 0x03
 #define UWB_DQF               0x04
 
 // Config registers
