@@ -44,16 +44,7 @@ typedef enum {
   _1_4HZ,
 } ab1815_watch_clock_freq;
 
-typedef enum {
-  HUNDREDTH_MATCH = 0x7,
-  ONCE_PER_MINUTE = 0x6,
-  ONCE_PER_HOUR   = 0x5,
-  ONCE_PER_DAY    = 0x4,
-  ONCE_PER_WEEK   = 0x3,
-  ONCE_PER_MONTH  = 0x2,
-  ONCE_PER_YEAR   = 0x1,
-  DISABLED        = 0x0,
-} ab1815_alarm_repeat;
+
 
 typedef struct {
   bool stnry_en;
@@ -98,28 +89,16 @@ typedef struct {
   bool xt1_en;
 } ab1815_int_config_t;
 
-typedef struct {
-  uint8_t hundredths;
-  uint8_t seconds;
-  uint8_t minutes;
-  uint8_t hours;
-  uint8_t date;
-  uint8_t months;
-  uint8_t years;
-  uint8_t weekday;
-} ab1815_time_t;
 
 void ab1815_init(const nrf_drv_spi_t* instance);
-void ab1815_get_config(ab1815_control_t* config);
-void ab1815_set_config(ab1815_control_t config);
-void ab1815_interrupt_config(ab1815_int_config_t config);
-ab1815_time_t unix_to_ab1815(struct timeval tv);
+void ab1815_read_reg(uint32_t reg, uint32_t* read_buf, size_t len);
+void ab1815_write_reg(uint32_t reg, uint32_t* write_buf, size_t len);
+void interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action);
 struct timeval ab1815_to_unix(ab1815_time_t time);
-void ab1815_set_time(ab1815_time_t time);
-void ab1815_get_time(ab1815_time_t* time);
+void uwb_set_config(uwb_control_t config) ;
+void uwb_get_config(uwb_control_t* config) ;
 struct timeval ab1815_get_time_unix(void);
-void ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_alarm_callback* cb);
-void ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequency);
-void ab1815_tickle_watchdog(void);
-void ab1815_clear_watchdog(void);
+void ab1815_interrupt_config(ab1815_int_config_t config);
+void ab1815_form_time_buffer(uwb_position position, uint32_t* buf) ;
+void uwb_get_position(uwb_position* position);
 

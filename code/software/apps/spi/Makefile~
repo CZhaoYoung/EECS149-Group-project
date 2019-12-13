@@ -1,0 +1,52 @@
+PROJECT_NAME = $(shell basename "$(realpath ./)")
+
+# Configurations
+NRF_IC = nrf52832
+SDK_VERSION = 15
+SOFTDEVICE_MODEL = s132
+
+# Source and header files
+APP_HEADER_PATHS += .
+APP_SOURCE_PATHS += .
+APP_SOURCES = $(notdir $(wildcard ./*.c))
+
+NRF_BASE_DIR ?= ../../nrf52x-base
+# Include board Makefile (if any)
+include ../../boards/buckler_revB/Board.mk
+# Include main Makefile
+include $(NRF_BASE_DIR)/make/AppMakefile.mk
+
+
+
+ 
+####################################################
+#  Configurations
+
+####################################################
+#  TARGET
+#  0: Raspberry-Pi
+#  1: else
+TARGET = 1
+
+####################################################
+#  INTERFACE_NUMBER
+#  0: USE_UART  
+#  1: USE_SPI    
+#  2: USE_SPI_DRDY
+INTERFACE_NUMBER = 1
+
+####################################################
+#  HAL_LOG_ENABLED
+#  for   HAL_Log         
+#  0:    not enabled      
+#  1:    enabled
+HAL_LOG_ENABLED = 0
+
+PROGRAM = main
+SOURCES = main.c
+
+CFLAGS += -Wall
+
+PROJ_DIR += ./
+
+include $(PROJ_DIR)/include/dwm1001.mak

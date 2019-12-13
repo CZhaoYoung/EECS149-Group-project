@@ -26,10 +26,10 @@ void ab1815_init(const nrf_drv_spi_t* instance) {
   nrf_gpio_pin_set(RTC_WDI);
 }
 
-void  ab1815_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
+void  ab1815_read_reg(uint32_t reg, uint32_t* read_buf, size_t len){
   if (len > 256) return;
-  uint8_t readreg = reg;
-  uint8_t buf[257];
+  uint32_t readreg = reg;
+  uint32_t buf[257];
 
   nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
   nrf_drv_spi_transfer(spi_instance, &readreg, 1, buf, len+1);
@@ -38,9 +38,9 @@ void  ab1815_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
   memcpy(read_buf, buf+1, len);
 }
 
-void ab1815_write_reg(uint8_t reg, uint8_t* write_buf, size_t len){
+void ab1815_write_reg(uint32_t reg, uint32_t* write_buf, size_t len){
   if (len > 256) return;
-  uint8_t buf[257];
+  uint32_t buf[257];
   buf[0] = 0x80 | reg;
   memcpy(buf+1, write_buf, len);
 
@@ -73,7 +73,7 @@ void uwb_set_config(uwb_control_t config) {
 
 
 
-void UWB_get_config(uwb_control_t* config) {
+void uwb_get_config(uwb_control_t* config) {
   uint16_t read;
 
   ab1815_read_reg(UWB_CONTROL1, &read, 1);
@@ -101,99 +101,31 @@ inline uint8_t get_ones(uint8_t x) {
   return x % 10;
 }
 
-void ab1815_form_time_buffer(uwb_position position, uint64_t* buf) {
+void ab1815_form_time_buffer(uwb_position position, uint32_t* buf) {
 
   // check the x, y is valid
   // we don't need to check 
 
 
   // To do
-  buf[] = (position.x & 0xFF) << 
-  buf[] = (position.y & 0xFF) <<
+  buf[0] = (position.x & 0xFFFFFFFF) << 32 //?
+  buf[1] = (position.y & 0xFFFFFFFF) << 32 //?
 
 
-  buf[0] = (get_tens(time.hundredths) & 0xF) << 4  | (get_ones(time.hundredths) & 0xF);
-  buf[1] = (get_tens(time.seconds) & 0x7) << 4    | (get_ones(time.seconds) & 0xF);
 
 }
 
-void ab1815_set_time(uwb_position position) {
-  uint8_t write[8];
+void uwb_get_position(uwb_position* position) { 
+  uint32_t read[4];
+  ab1815_read_reg(UWB_Y, read, 32);
 
-  // Ensure rtc write bit is enabled
-
-  uwb_set_config(ctrl_config);
-
-  ab1815_form_time_buffer(position, write);
-
-  ab1815_write_reg(UWB_X , write, 8);
-
-  //nrf_spi_mngr_transfer_t const write_time_transfer[] = {
-  //  NRF_SPI_MNGR_TRANSFER(write, 9, NULL, 0),
-  //};
-
-  //int error = nrf_spi_mngr_perform(spi_instance, &spi_config, write_time_transfer, 1, NULL);
-  //APP_ERROR_CHECK(error);
+  position -> x = (read[0] & 0xFFFFFFFF)
+  position -> y = (read[0] & 0xFFFFFFFF)
 }
 
-void ab1815_get_time(uwb_position* position) {
-  uint8_t read[10];
 
-  ab1815_read_reg(UWB_Y, read, 8);
 
-  //nrf_spi_mngr_transfer_t const config_transfer[] = {
-  //  NRF_SPI_MNGR_TRANSFER(write, 1, read, 9),
-  //};
 
-  //int error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);
-
-  time->hundredths = 10 * ((read[0] & 0xF0) >> 4) + (read[0] & 0xF);
-  time->seconds   = 10 * ((read[1] & 0x70) >> 4) + (read[1] & 0xF);
-  time->minutes   = 10 * ((read[2] & 0x70) >> 4) + (read[2] & 0xF);
-  // TODO handle 12 hour format
-  time->hours     = 10 * ((read[3] & 0x30) >> 4) + (read[3] & 0xF);
-  time->date      = 10 * ((read[4] & 0x30) >> 4) + (read[4] & 0xF);
-  time->months    = 10 * ((read[5] & 0x10) >> 4) + (read[5] & 0xF);
-  time->years     = 10 * ((read[6] & 0xF0) >> 4) + (read[6] & 0xF);
-  time->weekday   = read[7] & 0x7;
-}
-
-struct timeval ab1815_get_time_unix(void) {
-  ab1815_time_t time;
-  ab1815_get_time(&time);
-  return ab1815_to_unix(time);
-}
-
-ab1815_time_t unix_to_ab1815(struct timeval tv) {
-  ab1815_time_t time;
-  struct tm * t;
-  t = gmtime((time_t*)&(tv.tv_sec));
-  time.hundredths = tv.tv_usec / 10000;
-  time.seconds  = t->tm_sec;
-  time.minutes  = t->tm_min;
-  time.hours    = t->tm_hour;
-  time.date     = t->tm_mday;
-  time.months   = t->tm_mon + 1;
-  time.years    = t->tm_year - 100;
-  time.weekday  = t->tm_wday;
-  return time;
-}
-
-struct timeval ab1815_to_unix(ab1815_time_t time) {
-  struct timeval unix_time;
-  struct tm t;
-  t.tm_sec = time.seconds;
-  t.tm_min = time.minutes;
-  t.tm_hour = time.hours;
-  t.tm_mday = time.date;
-  t.tm_mon = time.months - 1;
-  t.tm_year = time.years + 100;
-  t.tm_wday = time.weekday;
-  unix_time.tv_sec = mktime(&t);
-  unix_time.tv_usec = time.hundredths * 10000;
-
-  return unix_time;
-}
 
 
 
