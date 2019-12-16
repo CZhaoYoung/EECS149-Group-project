@@ -14,51 +14,50 @@
 #include "my_dwm.h"
 #include "buckler.h"
 #include <string.h>
+#include "nrf_gpio.h"
+#include "nrf_delay.h"
+#include "app_util_platform.h"
+#include "nordic_common.h"
+#include "app_uart.h"
+#include "nrf_drv_clock.h"
+#include "nrf_power.h"
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
 
 #define RESP_ERRNO_LEN           3
 #define RESP_DAT_TYPE_OFFSET     RESP_ERRNO_LEN
 #define RESP_DAT_LEN_OFFSET      RESP_DAT_TYPE_OFFSET+1
 #define RESP_DAT_VALUE_OFFSET    RESP_DAT_LEN_OFFSET+1
 
-static const nrf_drv_spi_t* spi_instance;
-static nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 
-void dwm_init(const nrf_drv_spi_t* instance) {
-   spi_instance = instance;
-
-   spi_config.sck_pin    = SD_CARD_SPI_SCLK;
-   spi_config.miso_pin   = SD_CARD_SPI_MISO;
-   spi_config.mosi_pin   = SD_CARD_SPI_MOSI;
-   spi_config.ss_pin     = SD_CARD_SPI_CS;
-   spi_config.frequency  = NRF_DRV_SPI_FREQ_2M;
-   spi_config.mode       = NRF_DRV_SPI_MODE_0;
-   spi_config.bit_order  = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
-
-   // nrf_gpio_cfg_output(RTC_WDI);
-   // nrf_gpio_pin_set(RTC_WDI);
+ret_code_t dwm_init(nrf_drv_spi_t* spi_instance) {
+  // initialize spi
+  nrf_drv_spi_config_t spi_config = {
+    .sck_pin = SD_CARD_SPI_SCLK,
+    .mosi_pin = SD_CARD_SPI_MOSI,
+    .miso_pin = SD_CARD_SPI_MISO,
+    .ss_pin = SD_CARD_SPI_CS,
+    .irq_priority = NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY,
+    .orc = 0,
+    .frequency = NRF_DRV_SPI_FREQ_4M,
+    .mode = NRF_DRV_SPI_MODE_0,
+    .bit_order = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST
+  };
+  return nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
 }
 
-void read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
-  if (len > 256) return;
-  uint8_t readreg = reg;
-  uint8_t buf[257];
+ret_code_t dwm_reset(nrf_drv_spi_t* spi_instance) {
+  uint8_t reset_buf[1];
+  reset_buf[0] = 0xff;
 
-  nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
-  nrf_drv_spi_transfer(spi_instance, &readreg, 1, buf, len+1);
-  nrf_drv_spi_uninit(spi_instance);
-
-  memcpy(read_buf, buf+1, len);
-}
-
-void write_reg(uint8_t reg, uint8_t* write_buf, size_t len){
-  if (len > 256) return;
-  uint8_t buf[257];
-  buf[0] = 0x80 | reg;
-  memcpy(buf+1, write_buf, len);
-
-  nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
-  nrf_drv_spi_transfer(spi_instance, buf, len+1, NULL, 0);
-  nrf_drv_spi_uninit(spi_instance);
+  ret_code_t error_code = nrf_drv_spi_transfer(spi_instance, reset_buf, 1, NULL, 0);
+  APP_ERROR_CHECK(error_code);
+  error_code = nrf_drv_spi_transfer(spi_instance, reset_buf, 1, NULL, 0);
+  APP_ERROR_CHECK(error_code);
+  error_code = nrf_drv_spi_transfer(spi_instance, reset_buf, 1, NULL, 0);
+  APP_ERROR_CHECK(error_code);
+  return error_code;
 }
 
 void dwm_pos_set(dwm_pos_t* pos)
@@ -79,37 +78,59 @@ void dwm_pos_set(dwm_pos_t* pos)
    // return LMH_WaitForRx(rx_data, &rx_len, 3);
 }
 
-void dwm_pos_get(dwm_pos_t* p_pos)
-{
-   // uint8_t tx_data[DWM1001_TLV_MAX_SIZE], tx_len = 0;
-   // uint8_t rx_data[DWM1001_TLV_MAX_SIZE];
-   // uint16_t rx_len;
-   // uint8_t data_cnt;
-   // tx_data[tx_len++] = DWM1001_TLV_TYPE_CMD_POS_GET;
-   // tx_data[tx_len++] = 0;   
-   // LMH_Tx(tx_data, &tx_len);   
-   // if(LMH_WaitForRx(rx_data, &rx_len, 18) == RV_OK)
-   // {
-   //    data_cnt = RESP_DAT_VALUE_OFFSET;
-   //    p_pos->x = rx_data[data_cnt] 
-   //           + (rx_data[data_cnt+1]<<8) 
-   //           + (rx_data[data_cnt+2]<<16) 
-   //           + (rx_data[data_cnt+3]<<24); 
-   //    data_cnt += 4;
-   //    p_pos->y = rx_data[data_cnt] 
-   //           + (rx_data[data_cnt+1]<<8) 
-   //           + (rx_data[data_cnt+2]<<16) 
-   //           + (rx_data[data_cnt+3]<<24); 
-   //    data_cnt += 4;
-   //    p_pos->z = rx_data[data_cnt] 
-   //           + (rx_data[data_cnt+1]<<8) 
-   //           + (rx_data[data_cnt+2]<<16) 
-   //           + (rx_data[data_cnt+3]<<24); 
-   //    data_cnt += 4;
-   //    p_pos->qf = rx_data[data_cnt];
-   //    return RV_OK;
-   // }   
-   // return RV_ERR;
+ret_code_t dwm_pos_get(nrf_drv_spi_t* spi_instance, dwm_pos_t* pos) {
+  ret_code_t error_code;
+  uint8_t data_cnt;
+  uint8_t rx_buf[20] = {0};
+
+  uint8_t tx_buf[2];
+  tx_buf[0] = DWM1001_TLV_TYPE_CMD_POS_GET;
+  // tx_buf[0] = 0x0C;
+  tx_buf[1] = 0x00;
+
+  while (1) {
+    nrf_delay_ms(2000);
+    printf("tag pos get\n");
+
+    error_code = nrf_drv_spi_transfer(spi_instance, tx_buf, 2, NULL, 0);
+    APP_ERROR_CHECK(error_code);
+
+    while (1) {
+      error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 2);
+      APP_ERROR_CHECK(error_code);
+      if (error_code != NRF_SUCCESS) {
+        printf("spi error code: %d\n", (int) error_code);
+      }
+      if (rx_buf[0] != 0 || rx_buf[1] != 0) {
+        break;
+      }
+    }
+    printf("size/num: %d %d\n", rx_buf[0], rx_buf[1]);
+
+    if (rx_buf[0] == 0x40) {
+      error_code = dwm_reset(spi_instance);
+      APP_ERROR_CHECK(error_code);
+    }
+    else {
+      error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 18);
+      APP_ERROR_CHECK(error_code);
+      if (rx_buf[2] == 0 && rx_buf[3] == 0x41) {
+        data_cnt = 5;
+        pos -> x = rx_buf[data_cnt]
+                  + (rx_buf[data_cnt+1]<<8)
+                  + (rx_buf[data_cnt+2]<<16)
+                  + (rx_buf[data_cnt+3]<<24);
+
+        data_cnt += 4;
+        pos -> y = rx_buf[data_cnt]
+                  + (rx_buf[data_cnt+1]<<8)
+                  + (rx_buf[data_cnt+2]<<16)
+                  + (rx_buf[data_cnt+3]<<24);
+        break;        
+      }
+    }
+  }
+  return error_code;
 }
 
 void dwm_upd_rate_set(uint16_t ur, uint16_t ur_static)
@@ -148,70 +169,102 @@ void dwm_upd_rate_get(uint16_t *ur, uint16_t *ur_static)
    // return RV_ERR;
 }
 
-void dwm_cfg_tag_set(dwm_cfg_tag_t* cfg) 
-{
-  uint8_t write[4];
-  //read_reg(spi_config.miso_pin, write, 4);
-  //printf("%d %d %d %d\n", write[0], write[1], write[2], write[3]);
-
-  write[0] = DWM1001_TLV_TYPE_CMD_CFG_TN_SET;
-  write[1] = 0x02;
-  write[2] = cfg -> stnry_en << 2 | cfg -> meas_mode;
-  write[3] = cfg -> low_power_en << 7 | cfg -> loc_engine_en << 6 |
+ret_code_t dwm_cfg_tag_set(nrf_drv_spi_t* spi_instance, dwm_cfg_tag_t* cfg) {
+  ret_code_t error_code = dwm_reset(spi_instance);
+  
+  uint8_t rx_buf[3] = {0};
+  uint8_t tx_buf[4];
+  tx_buf[0] = DWM1001_TLV_TYPE_CMD_CFG_TN_SET;
+  tx_buf[1] = 0x02;
+  tx_buf[3] = cfg -> stnry_en << 2 | cfg -> meas_mode;
+  tx_buf[2] = cfg -> low_power_en << 7 | cfg -> loc_engine_en << 6 |
               cfg -> common.enc_en << 5 | cfg -> common.led_en << 4 | 
               cfg -> common.ble_en << 3 |
               cfg -> common.fw_update_en << 2 | 
               cfg -> common.uwb_mode;
-
-  write_reg(spi_config.mosi_pin, write, 4);
-  // uint8_t read_idle[4];
-  // read_reg(spi_config.miso_pin, read_idle, 4);
-  // printf("%d %d %d %d\n", read_idle[0], read_idle[1], read_idle[2], read_idle[3]);
-
-  uint8_t read_sizenum[2];
+  // tx_buf[2] = 0;
+  // tx_buf[3] = 0;
 
   while (1) {
-    read_reg(spi_config.miso_pin, read_sizenum, 2);
-    printf("%d %d\n", read_sizenum[0], read_sizenum[1]);
-    if (read_sizenum[1] != 0) break;
-  } 
+    nrf_delay_ms(2000);
+    printf("tag cfg set\n");
 
-  uint8_t read[3];
-  if (read_sizenum[0] != 3) {
-    printf("read_sizenum[0] = %d\n", read_sizenum[0]);
-    printf("ERROR\n");
-    return;
+    error_code = nrf_drv_spi_transfer(spi_instance, tx_buf, 4, NULL, 0);
+    APP_ERROR_CHECK(error_code);
+
+    while (1) {
+      error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 2);
+      APP_ERROR_CHECK(error_code);
+      if (error_code != NRF_SUCCESS) {
+        printf("spi error code: %d\n", (int) error_code);
+      }
+      if (rx_buf[0] != 0 || rx_buf[1] != 0) {
+        break;
+      }
+    }
+    printf("size/num: %x %x\n", rx_buf[0], rx_buf[1]);
+
+    if (rx_buf[0] == 0x40) {
+      error_code = dwm_reset(spi_instance);
+      APP_ERROR_CHECK(error_code);
+    }
+    else {
+      error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 3);
+      APP_ERROR_CHECK(error_code);
+      printf("result: %x %x %x\n", rx_buf[0], rx_buf[1], rx_buf[2]);
+      if (rx_buf[2] == 0) break;
+    }
   }
-  read_reg(spi_config.miso_pin, read, read_sizenum[0]);
-  printf("%d %d %d\n", read[0], read[1], read[2]);
-  if (read[2] != 0) printf("set cfg failed!\n");
-  else printf("set succeed!\n");
-
+  return error_code;
 }
 
-void dwm_cfg_get(dwm_cfg_t* cfg)
-{
-  uint8_t read_sizenum[2];
-
+ret_code_t dwm_cfg_get(nrf_drv_spi_t* spi_instance, dwm_cfg_t* cfg) {
+  // ret_code_t error_code = dwm_reset(spi_instance);
+  ret_code_t error_code;
+  uint8_t rx_buf[10] = {0};
+  uint8_t tx_buf[2];
+  tx_buf[0] = DWM1001_TLV_TYPE_CMD_CFG_GET;
+  tx_buf[1] = 0x00;
+  
   while (1) {
-    read_reg(spi_config.miso_pin, read_sizenum, 2);
-    if (read_sizenum[1] != 0) break;
-  } 
-  uint8_t read[3];
-  if (read_sizenum[0] != 3) {
-    printf("read_sizenum[0] = %d\n", read_sizenum[0]);
-    printf("ERROR\n");
-    return;
-  }
-  read_reg(spi_config.miso_pin, read, read_sizenum[0]);
+    nrf_delay_ms(2000);
+    printf("tag cfg get\n");
 
-   cfg->stnry_en = (read[1] & 0x04) >> 2;
-   cfg->meas_mode = (read[1] & 0x03);
-   cfg->low_power_en = (read[0] & 0x80) >> 7;
-   cfg->loc_engine_en = (read[0] & 0x40) >> 6;
-   cfg->common.enc_en = (read[0] & 0x20) >> 5;
-   cfg->common.led_en = (read[0] & 0x10) >> 4;
-   cfg->common.ble_en = (read[0] & 0x08) >> 3;
-   cfg->common.fw_update_en = (read[0] & 0x04) >> 2;
-   cfg->common.uwb_mode = read[0] & 0x03;
+    error_code = nrf_drv_spi_transfer(spi_instance, tx_buf, 2, NULL, 0);
+    APP_ERROR_CHECK(error_code);
+
+    while (1) {
+      error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 2);
+      APP_ERROR_CHECK(error_code);
+      if (error_code != NRF_SUCCESS) {
+        printf("spi error code: %d\n", (int) error_code);
+      }
+      if (rx_buf[0] != 0 || rx_buf[1] != 0) {
+        break;
+      }
+    }
+    printf("size/num: %x %x\n", rx_buf[0], rx_buf[1]);
+
+    if (rx_buf[0] == 0x40) {
+      error_code = dwm_reset(spi_instance);
+      APP_ERROR_CHECK(error_code);
+    }
+    else {
+      error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 7);
+      APP_ERROR_CHECK(error_code);
+      if (rx_buf[2] == 0 && rx_buf[3] == 0x46) {
+        cfg -> common.uwb_mode = rx_buf[5] & 0x03;
+        cfg -> common.fw_update_en = (rx_buf[5] & 0x04) >> 2;
+        cfg -> common.ble_en = (rx_buf[5] & 0x08) >> 3;
+        cfg -> common.led_en = (rx_buf[5] & 0x10) >> 4;
+        cfg -> common.enc_en = (rx_buf[5] & 0x20) >> 5;
+        cfg -> loc_engine_en = (rx_buf[5] & 0x40) >> 6;
+        cfg -> low_power_en = (rx_buf[5] & 0x80) >> 7;
+        cfg -> meas_mode = rx_buf[6] & 0x03;
+        cfg -> stnry_en = (rx_buf[6] & 0x04) >> 2;
+        break;        
+      }
+    }
+  }
+  return error_code;
 }

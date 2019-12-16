@@ -54,7 +54,9 @@
  *
  * @return none
  */
-void dwm_init(const nrf_drv_spi_t* instance);
+ret_code_t dwm_init(nrf_drv_spi_t* spi_instance);
+
+ret_code_t dwm_reset(nrf_drv_spi_t* spi_instance);
 
 /**
  * @brief Position coordinates in millimeters + quality factor
@@ -81,7 +83,7 @@ void dwm_pos_set(dwm_pos_t* pos);
  *
  * @return Error code
  */
-void dwm_pos_get(dwm_pos_t* pos);
+ret_code_t dwm_pos_get(nrf_drv_spi_t* spi_instance, dwm_pos_t* pos);
 
 /* maximum and minimum update rate in multiple of 100 ms */
 enum dwm_upd_rate{
@@ -181,7 +183,7 @@ typedef struct dwm_cfg {
  *
  * @return Error code
  */
-void dwm_cfg_tag_set(dwm_cfg_tag_t* cfg);
+ret_code_t dwm_cfg_tag_set(nrf_drv_spi_t* spi_instance, dwm_cfg_tag_t* cfg);
 
 /**
  * @brief Configures node to anchor mode with given options
@@ -198,7 +200,7 @@ void dwm_cfg_tag_set(dwm_cfg_tag_t* cfg);
  *
  * @return Error code
  */
-void dwm_cfg_get(dwm_cfg_t* cfg);
+ret_code_t dwm_cfg_get(nrf_drv_spi_t* spi_instance, dwm_cfg_t* cfg);
 
 #endif //_DWM_API_H_
 
