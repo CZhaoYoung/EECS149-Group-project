@@ -223,6 +223,8 @@ int main(void) {
   APP_ERROR_CHECK(error_code);
   printf("spi initialized!\n");
 
+  nrf_delay_ms(5000);
+
   // error_code = dwm_hard_reset(&my_spi_instance);
   // APP_ERROR_CHECK(error_code);
 
@@ -240,51 +242,51 @@ int main(void) {
     }
   }
 
-  dwm_cfg_tag_t cfg_tag;
-  dwm_cfg_t cfg_node;
+  // dwm_cfg_tag_t cfg_tag;
+  // dwm_cfg_t cfg_node;
 
-  cfg_tag.low_power_en = 0;
-  cfg_tag.meas_mode = DWM_MEAS_MODE_TWR;
-  cfg_tag.loc_engine_en = 1;
-  cfg_tag.common.led_en = 1;
-  cfg_tag.common.ble_en = 1;
-  cfg_tag.common.uwb_mode = DWM_UWB_MODE_ACTIVE;
-  cfg_tag.common.fw_update_en = 1;
+  // cfg_tag.low_power_en = 0;
+  // cfg_tag.meas_mode = DWM_MEAS_MODE_TWR;
+  // cfg_tag.loc_engine_en = 1;
+  // cfg_tag.common.led_en = 1;
+  // cfg_tag.common.ble_en = 1;
+  // cfg_tag.common.uwb_mode = DWM_UWB_MODE_ACTIVE;
+  // cfg_tag.common.fw_update_en = 1;
 
-  nrf_delay_ms(1000);
+  // nrf_delay_ms(1000);
 
-  error_code = dwm_cfg_tag_set(&my_spi_instance, &cfg_tag);
-  APP_ERROR_CHECK(error_code);
-  printf("set cfg\n");
+  // error_code = dwm_cfg_tag_set(&my_spi_instance, &cfg_tag);
+  // APP_ERROR_CHECK(error_code);
+  // printf("set cfg\n");
 
-  error_code = dwm_reboot(&my_spi_instance);
-  APP_ERROR_CHECK(error_code);
+  // error_code = dwm_reboot(&my_spi_instance);
+  // APP_ERROR_CHECK(error_code);
 
-  nrf_delay_ms(1000);
+  // nrf_delay_ms(1000);
 
-  error_code = dwm_cfg_get(&my_spi_instance, &cfg_node);
-  APP_ERROR_CHECK(error_code);
+  // error_code = dwm_cfg_get(&my_spi_instance, &cfg_node);
+  // APP_ERROR_CHECK(error_code);
 
-  if((cfg_tag.low_power_en        != cfg_node.low_power_en)
-   || (cfg_tag.meas_mode           != cfg_node.meas_mode)
-   || (cfg_tag.loc_engine_en       != cfg_node.loc_engine_en)
-   || (cfg_tag.common.led_en       != cfg_node.common.led_en)
-   || (cfg_tag.common.ble_en       != cfg_node.common.ble_en)
-   || (cfg_tag.common.uwb_mode     != cfg_node.common.uwb_mode)
-   || (cfg_tag.common.fw_update_en != cfg_node.common.fw_update_en))
-   {
-    printf("low_power_en        cfg_tag=%d : cfg_node=%d\n", cfg_tag.low_power_en,     cfg_node.low_power_en);
-    printf("meas_mode           cfg_tag=%d : cfg_node=%d\n", cfg_tag.meas_mode,        cfg_node.meas_mode);
-    printf("loc_engine_en       cfg_tag=%d : cfg_node=%d\n", cfg_tag.loc_engine_en,    cfg_node.loc_engine_en);
-    printf("common.led_en       cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.led_en,    cfg_node.common.led_en);
-    printf("common.ble_en       cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.ble_en,    cfg_node.common.ble_en);
-    printf("common.uwb_mode     cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.uwb_mode,  cfg_node.common.uwb_mode);
-    printf("common.fw_update_en cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.fw_update_en, cfg_node.common.fw_update_en);
-    printf("Configuration failed\n");
-  }
-  else {
-    printf("Configuration success\n");
-  }
+  // if((cfg_tag.low_power_en        != cfg_node.low_power_en)
+  //  || (cfg_tag.meas_mode           != cfg_node.meas_mode)
+  //  || (cfg_tag.loc_engine_en       != cfg_node.loc_engine_en)
+  //  || (cfg_tag.common.led_en       != cfg_node.common.led_en)
+  //  || (cfg_tag.common.ble_en       != cfg_node.common.ble_en)
+  //  || (cfg_tag.common.uwb_mode     != cfg_node.common.uwb_mode)
+  //  || (cfg_tag.common.fw_update_en != cfg_node.common.fw_update_en))
+  //  {
+  //   printf("low_power_en        cfg_tag=%d : cfg_node=%d\n", cfg_tag.low_power_en,     cfg_node.low_power_en);
+  //   printf("meas_mode           cfg_tag=%d : cfg_node=%d\n", cfg_tag.meas_mode,        cfg_node.meas_mode);
+  //   printf("loc_engine_en       cfg_tag=%d : cfg_node=%d\n", cfg_tag.loc_engine_en,    cfg_node.loc_engine_en);
+  //   printf("common.led_en       cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.led_en,    cfg_node.common.led_en);
+  //   printf("common.ble_en       cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.ble_en,    cfg_node.common.ble_en);
+  //   printf("common.uwb_mode     cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.uwb_mode,  cfg_node.common.uwb_mode);
+  //   printf("common.fw_update_en cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.fw_update_en, cfg_node.common.fw_update_en);
+  //   printf("Configuration failed\n");
+  // }
+  // else {
+  //   printf("Configuration success\n");
+  // }
 
 
 
