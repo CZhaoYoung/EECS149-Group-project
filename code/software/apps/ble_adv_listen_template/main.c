@@ -66,7 +66,7 @@ bool drive = false;
 bool back = false;
 bool left = false;
 bool right = false;
-bool chase = false;
+int chase = 0;
 int len_target = 71;
 dwm_pos_t my_pos[71];
 dwm_pos_t target_pos[71];
@@ -74,6 +74,7 @@ int pos_x[71] = {0};
 int pos_y[71] = {0};
 int index_target = 0;
 int index_my = 0;
+int speed = 150;
 uint16_t start_encoder;
 
 static float mesure_distance(uint16_t current_encoder, uint16_t previous_encoder) {
@@ -145,8 +146,13 @@ void ble_evt_adv_report(ble_evt_t const* p_ble_evt) {
         target_pos[index_target].y = p_data[index + 9] << 24 | p_data[index + 10] << 16 | 
                         p_data[index + 11] << 8 | p_data[index + 12];
         index_target = (index_target + 1) % len_target;
-        if (p_data[index + 13] == 1) chase = true;
-        else chase = false;
+        chase = p_data[index + 13];
+        if (p_data[index + 14] == 2) {
+          speed -= 25;
+        }
+        if (p_data[index + 14] == 1) {
+          speed += 25;
+        } 
         break;
       }
       index += len + 1;
@@ -348,7 +354,7 @@ int main(void) {
         } else {
           if (drive && !back && !right && !left) {
             state = DRIVE;
-            kobukiDriveDirect(100, 100);
+            kobukiDriveDirect(speed, speed);
           }
           else if (chase) {
             state = C_DRIVE;
@@ -388,15 +394,15 @@ int main(void) {
           }
           else if (!drive && back && !right && !left) {
             state = BACK;
-            kobukiDriveDirect(-100, -100);
+            kobukiDriveDirect(-speed, -speed);
           }
           else if (!drive && !back && right && !left) {
             state = RIGHT;
-            kobukiDriveDirect(100, -100);
+            kobukiDriveDirect(speed, -speed);
           }
           else if (!drive && !back && !right && left) {
             state = LEFT;
-            kobukiDriveDirect(-100, 100);
+            kobukiDriveDirect(-speed, speed);
           }
           else {
             state = WAIT;
@@ -433,17 +439,17 @@ int main(void) {
         }
         else {
           if (left_right == 1) {
-            kobukiDriveDirect(-150, 150);
+            kobukiDriveDirect(-250, 250);
           }
           else {
-            kobukiDriveDirect(150, -150);
+            kobukiDriveDirect(250, -250);
           }
         }
         break;
       }
       case C_DRIVE: {
         if (is_button_pressed(&sensors) || !chase) {
-          chase = false;
+          chase = 0;
           state = WAIT;
           kobukiDriveDirect(0, 0);
           break;
@@ -460,16 +466,20 @@ int main(void) {
           current_pos.x = pos_x[(len_target + 1) / 2];
           current_pos.y = pos_y[(len_target + 1) / 2];
 
-          // for (int i = 0; i < len_target; i ++) {
-          //   pos_x[i] = target_pos[i].x;
-          //   pos_y[i] = target_pos[i].y;
-          // }
-          // my_quick_sort(pos_x, 0, len_target - 1);
-          // my_quick_sort(pos_y, 0, len_target - 1);
-          // target_pos_1.x = pos_x[(len_target + 1) / 2];
-          // target_pos_1.y = pos_y[(len_target + 1) / 2];
-          target_pos_1.x = 0;
-          target_pos_1.y = 0;
+          if (chase == 1) {
+            for (int i = 0; i < len_target; i ++) {
+              pos_x[i] = target_pos[i].x;
+              pos_y[i] = target_pos[i].y;
+            }
+            my_quick_sort(pos_x, 0, len_target - 1);
+            my_quick_sort(pos_y, 0, len_target - 1);
+            target_pos_1.x = pos_x[(len_target + 1) / 2];
+            target_pos_1.y = pos_y[(len_target + 1) / 2];
+          }
+          else {
+            target_pos_1.x = 0;
+            target_pos_1.y = 0;
+          }
 
           double a = sqrt((current_pos.x - previous_pos.x) * (current_pos.x - previous_pos.x) + 
                     (current_pos.y - previous_pos.y) * (current_pos.y - previous_pos.y));
@@ -498,7 +508,7 @@ int main(void) {
         }
         else {
           distance = mesure_distance(sensors.leftWheelEncoder, start_encoder);
-          kobukiDriveDirect(200, 200);
+          kobukiDriveDirect(300, 300);
         }
         break;
       }
@@ -511,7 +521,7 @@ int main(void) {
         } else {
           if (drive && !back && !right && !left) {
             state = DRIVE;
-            kobukiDriveDirect(100, 100);
+            kobukiDriveDirect(speed, speed);
           }
           else {
             state = WAIT;
@@ -529,7 +539,7 @@ int main(void) {
         } else {
           if (!drive && back && !right && !left) {
             state = BACK;
-            kobukiDriveDirect(-100, -100);
+            kobukiDriveDirect(-speed, -speed);
           }
           else {
             state = WAIT;
@@ -547,7 +557,7 @@ int main(void) {
         } else {
           if (!drive && !back && !right && left) {
             state = LEFT;
-            kobukiDriveDirect(-100, 100);
+            kobukiDriveDirect(-speed, speed);
           }
           else {
             state = WAIT;
@@ -565,7 +575,7 @@ int main(void) {
         } else {
           if (!drive && !back && right && !left) {
             state = RIGHT;
-            kobukiDriveDirect(100, -100);
+            kobukiDriveDirect(speed, -speed);
           }
           else {
             state = WAIT;

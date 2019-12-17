@@ -92,6 +92,9 @@ bool get_dir = false;
 bool stop = false;
 bool alone = false;
 bool chase = false;
+bool speed_up = false;
+bool speed_down = false;
+bool home = false;
 
 simple_ble_app_t* simple_ble_app;
 
@@ -99,6 +102,21 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
     // TODO: logic for each characteristic and related state changes
 
 	 printf("%d\n", robot_state);
+    if (robot_state == 11) {
+      home = !home;
+    }
+    if (robot_state == 33) {
+      speed_down = true;
+    }
+    else {
+      speed_down = false;
+    }
+    if (robot_state == 22) {
+      speed_up = true;
+    }
+    else {
+      speed_up = false;
+    }
     if (robot_state == 128) {
       chase = !chase;
     }
@@ -339,7 +357,11 @@ int main(void) {
     //current_pos = pos_list[index_pos_list];
     //index_pos_list = (index_pos_list + k) % len_list;
     if (!alone) {
+      if (speed_up) x[10] = 1;
+      else if (speed_down) x[10] = 2;
+      else x[10] = 0;
       if (chase) x[9] = 1;
+      else if (home) x[9] = 2;
       else x[9] = 0;
       if (state == WAIT) x[0] = 0;
       else if (state == DRIVE) x[0] = 8;

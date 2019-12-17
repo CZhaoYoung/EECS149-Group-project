@@ -25,7 +25,7 @@ class RobotController():
 
         # keep state for keypresses
         self.pressed = {"up": False, "down": False, "right": False, "left": False, 
-        "d": False, "s": False, "a": False, "c": False}
+        "d": False, "s": False, "a": False, "c": False, "o": False, "p": False, "h": False}
         # TODO get service from robot
         # TODO get characteristic handles from service/robot
         # TODO enable notifications if using notifications
@@ -47,27 +47,37 @@ class RobotController():
             # set state of key to pressed
             self.pressed[event.name] = True
             # TODO write to characteristic to change direction
-            num = int(self.pressed["c"])
-            num = num * 2 + int(self.pressed["a"]);
-            num = num * 2 + int(self.pressed["s"]);
-            num = num * 2 + int(self.pressed["d"]);
-            num = num * 2 + int(self.pressed["up"]);
-            num = num * 2 + int(self.pressed["down"]);
-            num = num * 2 + int(self.pressed["right"]);
-            num = num * 2 + int(self.pressed["left"]);
+            num = 0
+            if (self.pressed["h"]): num = 11
+            elif (self.pressed["p"]): num = 22
+            elif (self.pressed["o"]): num = 33
+            else:
+                num = int(self.pressed["c"])
+                num = num * 2 + int(self.pressed["a"])
+                num = num * 2 + int(self.pressed["s"])
+                num = num * 2 + int(self.pressed["d"])
+                num = num * 2 + int(self.pressed["up"])
+                num = num * 2 + int(self.pressed["down"])
+                num = num * 2 + int(self.pressed["right"])
+                num = num * 2 + int(self.pressed["left"])
             self.ch.write(bytes([num]))
         else:
             # set state of key to released
             self.pressed[event.name] = False
             # TODO write to characteristic to stop moving in this direction
-            num = int(self.pressed["c"])
-            num = num * 2 + int(self.pressed["a"]);
-            num = num * 2 + int(self.pressed["s"]);
-            num = num * 2 + int(self.pressed["d"]);
-            num = num * 2 + int(self.pressed["up"]);
-            num = num * 2 + int(self.pressed["down"]);
-            num = num * 2 + int(self.pressed["right"]);
-            num = num * 2 + int(self.pressed["left"]);
+            num = 0
+            if (self.pressed["h"]): num = 11
+            elif (self.pressed["p"]): num = 22
+            elif (self.pressed["o"]): num = 33
+            else:
+                num = int(self.pressed["c"])
+                num = num * 2 + int(self.pressed["a"])
+                num = num * 2 + int(self.pressed["s"])
+                num = num * 2 + int(self.pressed["d"])
+                num = num * 2 + int(self.pressed["up"])
+                num = num * 2 + int(self.pressed["down"])
+                num = num * 2 + int(self.pressed["right"])
+                num = num * 2 + int(self.pressed["left"])
             self.ch.write(bytes([num]))
 
     def __enter__(self):

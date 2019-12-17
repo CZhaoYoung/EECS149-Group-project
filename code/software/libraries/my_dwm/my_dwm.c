@@ -122,8 +122,8 @@ int dwm_pos_get(nrf_drv_spi_t* spi_instance, dwm_pos_t* pos) {
   uint8_t rx_buf[100] = {0};
 
   uint8_t tx_buf[2];
-  // tx_buf[0] = DWM1001_TLV_TYPE_CMD_POS_GET;
-  tx_buf[0] = 0x0C;
+  tx_buf[0] = DWM1001_TLV_TYPE_CMD_POS_GET;
+  // tx_buf[0] = 0x0C;
   tx_buf[1] = 0x00;
 
   // // while (1) {
@@ -143,12 +143,17 @@ int dwm_pos_get(nrf_drv_spi_t* spi_instance, dwm_pos_t* pos) {
       }
     }
     printf("SIZE NUM: %d %d\n", rx_buf[0], rx_buf[1]);
-    if (rx_buf[0] != 81 || rx_buf[1] != 1) {
-      //error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, rx_buf[0]);
-      return 0; 
-    }
+    // if (rx_buf[0] != 81 || rx_buf[1] != 1) {
+      if (rx_buf[0] != 255) {
+        error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, rx_buf[0]);
+      }
+      else {
+        return 0;
+      }
+      // return 0; 
+    // }
 
-    error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 81);
+    // error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 81);
 
     if (rx_buf[2] == 0 && rx_buf[3] == 0x41) {
       data_cnt = 5;
