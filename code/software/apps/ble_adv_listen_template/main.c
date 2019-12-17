@@ -48,6 +48,19 @@ nrf_drv_spi_config_t my_spi_config = {
   .mode = NRF_DRV_SPI_MODE_0,
   .bit_order = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST
 };
+nrf_drv_spi_t spi_instance = NRF_DRV_SPI_INSTANCE(1);
+nrf_drv_spi_config_t spi_config = {
+  .sck_pin = BUCKLER_LCD_SCLK,
+  .mosi_pin = BUCKLER_LCD_MOSI,
+  .miso_pin = BUCKLER_LCD_MISO,
+  .ss_pin = BUCKLER_LCD_CS,
+  .irq_priority = NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY,
+  .orc = 0,
+  .frequency = NRF_DRV_SPI_FREQ_4M,
+  .mode = NRF_DRV_SPI_MODE_2,
+  .bit_order = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST
+};
+
 
 // BLE configuration
 // This is mostly irrelevant since we are scanning only
@@ -66,12 +79,14 @@ bool drive = false;
 bool back = false;
 bool left = false;
 bool right = false;
+bool stop_auto = false;
+bool get_pos_error = false;
 int chase = 0;
-int len_target = 71;
-dwm_pos_t my_pos[71];
-dwm_pos_t target_pos[71];
-int pos_x[71] = {0};
-int pos_y[71] = {0};
+int len_target = 51;
+dwm_pos_t my_pos[51];
+dwm_pos_t target_pos[51];
+int pos_x[51] = {0};
+int pos_y[51] = {0};
 int index_target = 0;
 int index_my = 0;
 int speed = 150;
@@ -146,6 +161,10 @@ void ble_evt_adv_report(ble_evt_t const* p_ble_evt) {
         target_pos[index_target].y = p_data[index + 9] << 24 | p_data[index + 10] << 16 | 
                         p_data[index + 11] << 8 | p_data[index + 12];
         index_target = (index_target + 1) % len_target;
+        
+        if (chase == 0 && p_data[index + 13]) {
+          stop_auto = false;
+        }
         chase = p_data[index + 13];
         if (p_data[index + 14] == 2) {
           speed -= 25;
@@ -167,32 +186,45 @@ void ble_evt_adv_report(ble_evt_t const* p_ble_evt) {
 }
 
 void print_state(states current_state){
-  // switch(current_state){
-  // case OFF: {
-  //   display_write("OFF", DISPLAY_LINE_0);
-  //   break;
-  //   }
-  //   case DRIVE: {
-  //   display_write("DRIVE", DISPLAY_LINE_0);
-  //   break;
-  //   }
-  //   case BACK: {
-  //   display_write("BACK", DISPLAY_LINE_0);
-  //   break;
-  //   }
-  //   case LEFT: {
-  //   display_write("LEFT", DISPLAY_LINE_0);
-  //   break;
-  //   }
-  //   case RIGHT: {
-  //   display_write("RIGHT", DISPLAY_LINE_0);
-  //   break;
-  //   }
-  //   case WAIT: {
-  //   display_write("WAIT", DISPLAY_LINE_0);
-  //   break;
-  //   }
-  // }
+  nrf_drv_spi_uninit(&my_spi_instance);
+  nrf_drv_spi_init(&spi_instance, &spi_config, NULL, NULL);
+  switch(current_state){
+    case OFF: {
+    display_write("OFF", DISPLAY_LINE_0);
+    break;
+    }
+    case DRIVE: {
+    display_write("DRIVE", DISPLAY_LINE_0);
+    break;
+    }
+    case BACK: {
+    display_write("BACK", DISPLAY_LINE_0);
+    break;
+    }
+    case LEFT: {
+    display_write("LEFT", DISPLAY_LINE_0);
+    break;
+    }
+    case RIGHT: {
+    display_write("RIGHT", DISPLAY_LINE_0);
+    break;
+    }
+    case WAIT: {
+    display_write("WAIT", DISPLAY_LINE_0);
+    break;
+    case C_ROTATE: {
+      display_write("CHASE", DISPLAY_LINE_0);
+      break;
+    }
+    case C_DRIVE: {
+      display_write("CHASE", DISPLAY_LINE_0);
+      break;
+    }
+    }
+  }
+  if (get_pos_error) {
+    display_write("POS_ERROR", DISPLAY_LINE_1);
+  }
 }
 
 int main(void) {
@@ -286,22 +318,14 @@ int main(void) {
   nrf_gpio_pin_dir_set(25, NRF_GPIO_PIN_DIR_OUTPUT);
 
   // initialize display
-  // nrf_drv_spi_t spi_instance = NRF_DRV_SPI_INSTANCE(1);
-  // nrf_drv_spi_config_t spi_config = {
-  //   .sck_pin = BUCKLER_LCD_SCLK,
-  //   .mosi_pin = BUCKLER_LCD_MOSI,
-  //   .miso_pin = BUCKLER_LCD_MISO,
-  //   .ss_pin = BUCKLER_LCD_CS,
-  //   .irq_priority = NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY,
-  //   .orc = 0,
-  //   .frequency = NRF_DRV_SPI_FREQ_4M,
-  //   .mode = NRF_DRV_SPI_MODE_2,
-  //   .bit_order = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST
-  // };
-  // error_code = nrf_drv_spi_init(&spi_instance, &spi_config, NULL, NULL);
-  // APP_ERROR_CHECK(error_code);
-  // display_init(&spi_instance);
-  // printf("Display initialized!\n");
+  
+  printf("!!!!\n");
+
+  nrf_drv_spi_uninit(&my_spi_instance);
+  error_code = nrf_drv_spi_init(&spi_instance, &spi_config, NULL, NULL);
+  APP_ERROR_CHECK(error_code);
+  display_init(&spi_instance);
+  printf("Display initialized!\n");
 
   // initialize i2c master (two wire interface)
   nrf_drv_twi_config_t i2c_config = NRF_DRV_TWI_DEFAULT_CONFIG;
@@ -325,10 +349,12 @@ int main(void) {
   dwm_pos_t target_pos_1;
   int left_right;
 
-  kobukiInit();
+  kobukiInit();  
   printf("Kobuki initialized!\n");
   chase = false;
   while (1) {
+    nrf_drv_spi_uninit(&spi_instance);
+    error_code = nrf_drv_spi_init(&my_spi_instance, &my_spi_config, NULL, NULL);
     int k = dwm_pos_get(&my_spi_instance, &my_pos[index_my]);
     index_my = (index_my + k) % len_target;
     // Sleep while SoftDevice handles BLE
@@ -356,10 +382,12 @@ int main(void) {
         } else {
           if (drive && !back && !right && !left) {
             state = DRIVE;
+            get_pos_error = false;
             kobukiDriveDirect(speed, speed);
           }
-          else if (chase) {
+          else if (chase && !stop_auto) {
             state = C_DRIVE;
+            get_pos_error = false;
             for (int i = 0; i < len_target; i ++) {
               pos_x[i] = my_pos[i].x;
               pos_y[i] = my_pos[i].y;
@@ -373,37 +401,20 @@ int main(void) {
             mpu9250_stop_gyro_integration();
             start_encoder = sensors.leftWheelEncoder;
             distance = 0;
-
-            // state = C_ROTATE;
-            // dwm_pos_get(&my_spi_instance, &current_pos);
-            // // for (int i = 0; i < len_target; i ++) {
-            // //   target_pos_x[i] = target_pos[i].x;
-            // //   target_pos_y[i] = target_pos[i].y;
-            // // }
-            // my_quick_sort(target_pos_x, 0, len_target - 1);
-            // my_quick_sort(target_pos_y, 0, len_target - 1);
-            // double d_x = target_pos_x[(len_target + 1) / 2] - current_pos.x;
-            // double d_y = target_pos_y[(len_target + 1) / 2] - current_pos.y;
-            // printf("%d %d\n", current_pos.x, current_pos.y);
-            // rotate_angle = atan(d_y / d_x);
-            // if (d_x < 0) rotate_angle += PI;
-            // if (rotate_angle < 0) rotate_angle = 2*PI + rotate_angle;
-            // rotate_angle = rotate_angle * 180.0 / PI;
-            // printf("%f\n", rotate_angle);
-            // kobukiDriveDirect(0, 0);
-            // current_rotate_angle = 0;
-            // mpu9250_start_gyro_integration();
           }
           else if (!drive && back && !right && !left) {
             state = BACK;
+            get_pos_error = false;
             kobukiDriveDirect(-speed, -speed);
           }
           else if (!drive && !back && right && !left) {
             state = RIGHT;
+            get_pos_error = false;
             kobukiDriveDirect(speed, -speed);
           }
           else if (!drive && !back && !right && left) {
             state = LEFT;
+            get_pos_error = false;
             kobukiDriveDirect(-speed, speed);
           }
           else {
@@ -414,9 +425,10 @@ int main(void) {
         break; // each case needs to end with break!
       }
       case C_ROTATE: {
+        print_state(state);
         if (is_button_pressed(&sensors) || !chase) {
           state = WAIT;
-          chase = false;
+          stop_auto = true;
           kobukiDriveDirect(0, 0);
           mpu9250_stop_gyro_integration();
           break;
@@ -450,8 +462,9 @@ int main(void) {
         break;
       }
       case C_DRIVE: {
+        print_state(state);
         if (is_button_pressed(&sensors) || !chase) {
-          chase = 0;
+          stop_auto = true;
           state = WAIT;
           kobukiDriveDirect(0, 0);
           break;
@@ -467,6 +480,14 @@ int main(void) {
           my_quick_sort(pos_y, 0, len_target - 1);
           current_pos.x = pos_x[(len_target + 1) / 2];
           current_pos.y = pos_y[(len_target + 1) / 2];
+
+          if (current_pos.x == previous_pos.x && current_pos.y == previous_pos.y) {
+            stop_auto = true;
+            get_pos_error = true;
+            state = WAIT;
+            kobukiDriveDirect(0, 0);
+            break; 
+          }
 
           if (chase == 1) {
             for (int i = 0; i < len_target; i ++) {
