@@ -17,6 +17,8 @@ typedef enum {
     LEFT=3,
     RIGHT=4,
     WAIT=5,
+    GET_DIR=6,
+    ROTATE=7,
 } states;
 
 #endif /* STATES_H_ */

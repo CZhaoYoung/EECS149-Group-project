@@ -83,7 +83,7 @@ void dwm_pos_set(dwm_pos_t* pos);
  *
  * @return Error code
  */
-ret_code_t dwm_pos_get(nrf_drv_spi_t* spi_instance, dwm_pos_t* pos);
+int dwm_pos_get(nrf_drv_spi_t* spi_instance, dwm_pos_t* pos);
 
 /* maximum and minimum update rate in multiple of 100 ms */
 enum dwm_upd_rate{
@@ -201,6 +201,10 @@ ret_code_t dwm_cfg_tag_set(nrf_drv_spi_t* spi_instance, dwm_cfg_tag_t* cfg);
  * @return Error code
  */
 ret_code_t dwm_cfg_get(nrf_drv_spi_t* spi_instance, dwm_cfg_t* cfg);
+
+void my_quick_sort(int arr[], int left, int right);
+
+ret_code_t dwm_reboot(nrf_drv_spi_t* spi_instance);
 
 #endif //_DWM_API_H_
 

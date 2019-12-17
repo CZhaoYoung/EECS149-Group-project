@@ -47,14 +47,52 @@ ret_code_t dwm_init(nrf_drv_spi_t* spi_instance) {
   return nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
 }
 
+ret_code_t dwm_reboot(nrf_drv_spi_t* spi_instance) {
+  ret_code_t error_code;
+  uint8_t rx_buf[3] = {0};
+
+  uint8_t tx_buf[2];
+  tx_buf[0] = 0x14;
+  tx_buf[1] = 0x00;
+
+  while (1) {
+    error_code = nrf_drv_spi_transfer(spi_instance, tx_buf, 2, NULL, 0);
+    APP_ERROR_CHECK(error_code);
+
+    while (1) {
+      error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 2);
+      APP_ERROR_CHECK(error_code);
+      if (error_code != NRF_SUCCESS) {
+        printf("spi error code: %d\n", (int) error_code);
+      }
+      printf("!%x %x\n", rx_buf[0], rx_buf[1]);
+      if (rx_buf[0] != 0 || rx_buf[1] != 0) {
+        break;
+      }
+    }
+
+    printf("size/num: %d %d\n", rx_buf[0], rx_buf[1]);
+    if (rx_buf[0] != 3 || rx_buf[1] != 1) {
+      continue; 
+    }
+
+    error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 3);
+    break;
+  }
+  return error_code;
+}
+
 ret_code_t dwm_reset(nrf_drv_spi_t* spi_instance) {
   uint8_t reset_buf[1];
   reset_buf[0] = 0xff;
 
+  nrf_delay_ms(100);
   ret_code_t error_code = nrf_drv_spi_transfer(spi_instance, reset_buf, 1, NULL, 0);
   APP_ERROR_CHECK(error_code);
+  nrf_delay_ms(100);
   error_code = nrf_drv_spi_transfer(spi_instance, reset_buf, 1, NULL, 0);
   APP_ERROR_CHECK(error_code);
+  nrf_delay_ms(100);
   error_code = nrf_drv_spi_transfer(spi_instance, reset_buf, 1, NULL, 0);
   APP_ERROR_CHECK(error_code);
   return error_code;
@@ -78,20 +116,18 @@ void dwm_pos_set(dwm_pos_t* pos)
    // return LMH_WaitForRx(rx_data, &rx_len, 3);
 }
 
-ret_code_t dwm_pos_get(nrf_drv_spi_t* spi_instance, dwm_pos_t* pos) {
+int dwm_pos_get(nrf_drv_spi_t* spi_instance, dwm_pos_t* pos) {
   ret_code_t error_code;
   uint8_t data_cnt;
-  uint8_t rx_buf[20] = {0};
+  uint8_t rx_buf[100] = {0};
 
   uint8_t tx_buf[2];
-  tx_buf[0] = DWM1001_TLV_TYPE_CMD_POS_GET;
-  // tx_buf[0] = 0x0C;
+  // tx_buf[0] = DWM1001_TLV_TYPE_CMD_POS_GET;
+  tx_buf[0] = 0x0C;
   tx_buf[1] = 0x00;
 
-  while (1) {
-    nrf_delay_ms(2000);
-    printf("tag pos get\n");
-
+  // // while (1) {
+  //   nrf_delay_ms(10);
     error_code = nrf_drv_spi_transfer(spi_instance, tx_buf, 2, NULL, 0);
     APP_ERROR_CHECK(error_code);
 
@@ -101,36 +137,36 @@ ret_code_t dwm_pos_get(nrf_drv_spi_t* spi_instance, dwm_pos_t* pos) {
       if (error_code != NRF_SUCCESS) {
         printf("spi error code: %d\n", (int) error_code);
       }
+      //printf("!%x %x\n", rx_buf[0], rx_buf[1]);
       if (rx_buf[0] != 0 || rx_buf[1] != 0) {
         break;
       }
     }
-    printf("size/num: %d %d\n", rx_buf[0], rx_buf[1]);
-
-    if (rx_buf[0] == 0x40) {
-      error_code = dwm_reset(spi_instance);
-      APP_ERROR_CHECK(error_code);
+    printf("SIZE NUM: %d %d\n", rx_buf[0], rx_buf[1]);
+    if (rx_buf[0] != 81 || rx_buf[1] != 1) {
+      //error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, rx_buf[0]);
+      return 0; 
     }
-    else {
-      error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 18);
-      APP_ERROR_CHECK(error_code);
-      if (rx_buf[2] == 0 && rx_buf[3] == 0x41) {
-        data_cnt = 5;
-        pos -> x = rx_buf[data_cnt]
-                  + (rx_buf[data_cnt+1]<<8)
-                  + (rx_buf[data_cnt+2]<<16)
-                  + (rx_buf[data_cnt+3]<<24);
 
-        data_cnt += 4;
-        pos -> y = rx_buf[data_cnt]
-                  + (rx_buf[data_cnt+1]<<8)
-                  + (rx_buf[data_cnt+2]<<16)
-                  + (rx_buf[data_cnt+3]<<24);
-        break;        
-      }
+    error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 81);
+
+    if (rx_buf[2] == 0 && rx_buf[3] == 0x41) {
+      data_cnt = 5;
+      pos -> x = rx_buf[data_cnt]
+            + (rx_buf[data_cnt+1]<<8)
+            + (rx_buf[data_cnt+2]<<16)
+            + (rx_buf[data_cnt+3]<<24);
+
+      data_cnt += 4;
+      pos -> y = rx_buf[data_cnt]
+              + (rx_buf[data_cnt+1]<<8)
+              + (rx_buf[data_cnt+2]<<16)
+              + (rx_buf[data_cnt+3]<<24);
+      //printf("%d %d\n", pos->x, pos->y);
+      return 1;
     }
-  }
-  return error_code;
+  // }
+  return 0;
 }
 
 void dwm_upd_rate_set(uint16_t ur, uint16_t ur_static)
@@ -202,8 +238,7 @@ ret_code_t dwm_cfg_tag_set(nrf_drv_spi_t* spi_instance, dwm_cfg_tag_t* cfg) {
         break;
       }
     }
-    printf("size/num: %x %x\n", rx_buf[0], rx_buf[1]);
-
+    printf("SIZE NUM: %d %d\n", rx_buf[0], rx_buf[1]);
     if (rx_buf[0] == 0x40) {
       error_code = dwm_reset(spi_instance);
       APP_ERROR_CHECK(error_code);
@@ -211,7 +246,6 @@ ret_code_t dwm_cfg_tag_set(nrf_drv_spi_t* spi_instance, dwm_cfg_tag_t* cfg) {
     else {
       error_code = nrf_drv_spi_transfer(spi_instance, NULL, 0, rx_buf, 3);
       APP_ERROR_CHECK(error_code);
-      printf("result: %x %x %x\n", rx_buf[0], rx_buf[1], rx_buf[2]);
       if (rx_buf[2] == 0) break;
     }
   }
@@ -243,8 +277,7 @@ ret_code_t dwm_cfg_get(nrf_drv_spi_t* spi_instance, dwm_cfg_t* cfg) {
         break;
       }
     }
-    printf("size/num: %x %x\n", rx_buf[0], rx_buf[1]);
-
+    printf("SIZE NUM: %d %d\n", rx_buf[0], rx_buf[1]);
     if (rx_buf[0] == 0x40) {
       error_code = dwm_reset(spi_instance);
       APP_ERROR_CHECK(error_code);
@@ -267,4 +300,28 @@ ret_code_t dwm_cfg_get(nrf_drv_spi_t* spi_instance, dwm_cfg_t* cfg) {
     }
   }
   return error_code;
+}
+
+void my_quick_sort(int arr[], int left, int right) {
+  if (left < right) {
+    int k = arr[left];
+    int i = left, j = right;
+    while (i < j) {
+      while (arr[j] > k && j > i) {
+        j --;
+      }
+      if (i < j) {
+        arr[i ++] = arr[j];
+      }
+      while (i < j && arr[i] < k) {
+        i ++;
+      }
+      if (i < j) {
+        arr[j --] = arr[i];
+      }
+    }
+    arr[i] = k;
+    my_quick_sort(arr, left, j - 1);
+    my_quick_sort(arr, i + 1, right);
+  }
 }

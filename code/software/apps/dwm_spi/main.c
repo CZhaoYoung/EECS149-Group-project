@@ -34,6 +34,9 @@ int main(void) {
 
 
   // send three 0xff to reset
+  // error_code = dwm_hard_reset(&spi_instance);
+  // APP_ERROR_CHECK(error_code);
+
   error_code = dwm_reset(&spi_instance);
   APP_ERROR_CHECK(error_code);
 
@@ -51,7 +54,10 @@ int main(void) {
     if (error_code != NRF_SUCCESS) {
       printf("continuing spi error code: %d\n", (int) error_code);
     }
+    printf("%x %x\n", rx_buf[0], rx_buf[1]);
   }
+
+//  error_code = dwm_cfg_set(&spi_instance);
 
   dwm_cfg_tag_t cfg_tag;
   dwm_cfg_t cfg_node;
@@ -96,9 +102,8 @@ int main(void) {
 
   dwm_pos_t pos;
   while (1) {
-    nrf_delay_ms(2000);
-    error_code = dwm_pos_get(&spi_instance, &pos);
-    APP_ERROR_CHECK(error_code);
-    printf("x y: [%d, %d]\n", pos.x , pos.y);
+    nrf_delay_ms(1000);
+    dwm_pos_get(&spi_instance, &pos);
+    printf("x y: [%ld, %ld]\n", pos.x , pos.y);
   }
 }
