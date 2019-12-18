@@ -225,6 +225,9 @@ void print_state(states current_state){
   if (get_pos_error) {
     display_write("POS_ERROR", DISPLAY_LINE_1);
   }
+  else {
+    display_write(" ", DISPLAY_LINE_1);
+  }
 }
 
 int main(void) {
@@ -469,7 +472,7 @@ int main(void) {
           kobukiDriveDirect(0, 0);
           break;
         }
-        if (distance >= target_distance) {
+        if (abs(distance) >= target_distance) {
           state = C_ROTATE;
 
           for (int i = 0; i < len_target; i ++) {
